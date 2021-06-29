@@ -5,6 +5,7 @@ import librosa
 import librosa.display
 import numpy as np
 from matplotlib import pyplot as plt
+from scipy import signal
 import soundfile
 
 import ex_1.a_miyashita.main as ex1
@@ -81,26 +82,27 @@ def melfilterbank(bank_size, fft_size, sr):
     return filterbank[1:-1]
 
 
-def get_mfcc(signal, bank_size, fft_size, sr):
+def get_mfcc(input, bank_size, fft_size, sr):
     """
         Get MFCC from signal.
 
         # Args
-            signal (ndarray, axis=(time,)): input signal
+            input (ndarray, axis=(time,)): input signal
             bank_size (int): size of mel-filter-bank
             fft_size (int): window size of stft
             sr (int): sampling rate
         # Returns
             mfcc (ndarray, axis=(qefrency, frame)): MFCC feature
     """
-    spec = np.abs(ex1.stft(signal, fft_size))
+    enp = signal.lfilter([1.0,-0.97], 1, input)
+    _,_,spec = np.abs(signal.stft(enp, fs=sr, nperseg=fft_size))
     filter = melfilterbank(bank_size, fft_size, sr)
     # apply mel-filter-bank to spectrogram
     melspec = filter @ spec
 
     melspec_db = librosa.amplitude_to_db(melspec)
     ceps = dct(melspec_db, axis=0)
-    mfcc = ceps[1:13]
+    mfcc = ceps[...,1:13,:]
     return mfcc
 
 def delta(input, neighbor):
